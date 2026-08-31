@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ARCRON KIT · integration cookbook · Algorand TestNet</title>
+  <meta name="description" content="The integration cookbook for the Arcron keeper network: every recipe and every trap, copy-paste runnable. Read-only. No wallet.">
+  <meta name="theme-color" content="#070806">
+  <meta property="og:title" content="ARCRON KIT · integration cookbook">
+  <meta property="og:description" content="Every recipe and every trap for the Arcron keeper network, copy-paste runnable.">
+  <meta property="og:type" content="website">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Bebas+Neue&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="hall">
+    <div class="tape" aria-hidden="true">
+      <span>INTEGRATION COOKBOOK</span><span>EVERY RECIPE</span><span>EVERY TRAP</span><span>COPY-PASTE RUNNABLE</span>
+      <span>INTEGRATION COOKBOOK</span><span>EVERY RECIPE</span><span>EVERY TRAP</span><span>COPY-PASTE RUNNABLE</span>
+    </div>
+
+    <div id="snap-banner" class="snap-banner hidden" role="status">
+      SNAPSHOT as-of round <span id="snap-round">—</span> · live feed unreachable · chain is source of truth
+    </div>
+
+    <header class="lintel">
+      <div class="lintel-left">
+        <p class="station">GATE ARC · KIT</p>
+        <p class="substation">Algorand TestNet · keeper <a href="https://testnet.explorer.perawallet.app/application/769891898">769891898</a></p>
+      </div>
+      <h1 class="mast">ARCRON KIT</h1>
+      <div class="lintel-right">
+        <div class="crt-clock" title="Algod last-round · ~2.8s per round">
+          <div class="crt-label">CURRENT ROUND</div>
+          <div class="crt-digits" id="round-digits">········</div>
+          <div class="crt-scan" aria-hidden="true"></div>
+        </div>
+        <div class="net-status">
+          <span id="feed-mode" class="mode unknown">SEEKING</span>
+          <span id="feed-note" class="note">prefer live algod · snapshot if fetch fails</span>
+        </div>
+      </div>
+    </header>
+
+    <section class="totals" aria-label="Network totals">
+      <div class="stat">
+        <div class="stat-label">UPKEEPS REGISTERED</div>
+        <div class="stat-value" id="t-count">—</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">ALGO ESCROWED</div>
+        <div class="stat-value" id="t-escrow">—</div>
+      </div>
+    </section>
+
+    <section class="explainer housing" aria-label="What this is">
+      <div class="screws" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+      <div class="housing-title">
+        <span class="housing-mast">THE COOKBOOK</span>
+        <span class="tiny">every trap below was hit and fixed for real, on chain, by corvid-agent</span>
+      </div>
+      <div class="explainer-body">
+        <p>
+          <strong>Arcron is a permissionless keeper network on Algorand.</strong> Anyone
+          registers a recurring upkeep — a target application call, an interval in rounds,
+          a fee escrow — and any keeper executes it when due. This kit is the integration
+          path with the teeth marks left in: the ten traps below each cost a real
+          transaction before they became comments in
+          <a href="https://github.com/corvid-agent/arcron-kit/blob/main/recipes/register.py">recipes/register.py</a>.
+        </p>
+        <p>
+          Four contracts on this network are the reference implementations, registered and
+          executing live: <em>plod</em>, <em>waddle</em>, <em>arcron-beacon</em> and
+          <em>epitaph</em> — fleet cards below, upkeep rows on the live board.
+        </p>
+        <div class="onboard">
+          <a class="onboard-link" href="https://github.com/corvid-agent/arcron-kit/blob/main/recipes/register.py">recipes/register.py <span class="tiny">the register flow, traps inline</span></a>
+          <a class="onboard-link" href="https://github.com/corvid-agent/arcron-kit/blob/main/recipes/selectors.py">recipes/selectors.py <span class="tiny">selector vectors, self-verifying</span></a>
+          <a class="onboard-link" href="https://github.com/corvid-agent/arcron-kit/blob/main/recipes/read_upkeeps.py">recipes/read_upkeeps.py <span class="tiny">decode every box via algod</span></a>
+          <a class="onboard-link" href="https://github.com/CorvidLabs/arcron/blob/main/docs/integrating.md">CorvidLabs/arcron · docs/integrating.md <span class="tiny">the protocol's own guide</span></a>
+        </div>
+      </div>
+    </section>
+
+    <section class="traps housing" aria-label="The ten traps">
+      <div class="screws" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+      <div class="housing-title">
+        <span class="housing-mast">THE TEN TRAPS</span>
+        <span class="tiny">numbered as they bit · each one is a comment in register.py at the line it guards</span>
+      </div>
+      <div class="trap-grid">
+        <div class="trap-card hot">
+          <div class="trap-head"><span class="trap-no" data-flap="01" data-flap-size="22px"></span><span class="trap-name">byte[][] NEEDS ITS OFFSET HEADER</span></div>
+          <p class="trap-scar">A bare 4-byte selector hand-rolled as <code>call_args</code> fails <code>register</code> with a bare assert. A dynamic array of dynamic bytes carries u16 count + u16 offsets + u16 lengths.</p>
+          <p class="trap-fix">FIX <code>ArrayDynamicType(ArrayDynamicType(ByteType())).encode([selector])</code> → <b>0001 0002 0004 &lt;selector&gt;</b> — 10 bytes, not 4.</p>
+        </div>
+        <div class="trap-card">
+          <div class="trap-head"><span class="trap-no" data-flap="02" data-flap-size="22px"></span><span class="trap-name">THE MBR FORMULA</span></div>
+          <p class="trap-scar">The box minimum balance is exact, and the contract asserts it: underpay and the group dies. Overpaying a guess strands the difference until cancel.</p>
+          <p class="trap-fix">FIX <code>2,500 + 400 × (139 + len(encoded call_args))</code> µALGO → <b>62,100</b> for the 10-byte bare-selector encoding. Refunded in full on cancel.</p>
+        </div>
+        <div class="trap-card">
+          <div class="trap-head"><span class="trap-no" data-flap="03" data-flap-size="22px"></span><span class="trap-name">THE BOX THAT DOESN'T EXIST YET</span></div>
+          <p class="trap-scar">The group must reference the box <em>register is about to create</em>, and register assigns the id. A stale id — anyone else registered since your read — fails the group.</p>
+          <p class="trap-fix">FIX box ref <code>b"u" + itob(next_upkeep_id)</code>, read from keeper global state <b>fresh every attempt</b>. It's a race, not a bug: re-read, resubmit.</p>
+        </div>
+        <div class="trap-card">
+          <div class="trap-head"><span class="trap-no" data-flap="04" data-flap-size="22px"></span><span class="trap-name">PUYA LOWERS Application TO uint64</span></div>
+          <p class="trap-scar">The source says <code>set_keeper(app: Application)</code>, but the ARC-4 signature is <code>set_keeper(uint64)void</code>. A selector hashed from the source matches nothing and dies with "err opcode".</p>
+          <p class="trap-fix">FIX selector <b>0xc4c1d8f7</b> for <code>set_keeper(uint64)void</code>. The .arc56.json artifact is the authority, never the Python source.</p>
+        </div>
+        <div class="trap-card">
+          <div class="trap-head"><span class="trap-no" data-flap="05" data-flap-size="22px"></span><span class="trap-name">app_params_get NEEDS THE APP AVAILABLE</span></div>
+          <p class="trap-scar">Hand-TEAL <code>set_keeper</code> reading <code>AppCreator</code> fails "unavailable App" unless the keeper app rides in <code>foreign_apps</code> of that call.</p>
+          <p class="trap-fix">FIX put the keeper in <code>foreign_apps</code> for the setup call. Inside keeper-driven hooks, <code>Application(keeper).address</code> works <b>without</b> naming it — keeper bots simulate first and auto-attach what simulation names (<code>_resolve_execute_references</code>).</p>
+        </div>
+        <div class="trap-card hot">
+          <div class="trap-head"><span class="trap-no" data-flap="06" data-flap-size="22px"></span><span class="trap-name">POLICY 0 IS THE TRAP</span></div>
+          <p class="trap-scar"><code>CATCH_UP = 0</code> is what an undecided caller passes. It replays every missed interval: one due upkeep can demand many back-to-back executions and burn its whole escrow catching up — upkeep 18 spent everything and advanced 41 rounds against a 23,478-round backlog.</p>
+          <p class="trap-fix">FIX pass <b>SKIP_AHEAD = 1</b> deliberately. Next fire is always in the future, keeping the schedule's phase.</p>
+        </div>
+        <div class="trap-card">
+          <div class="trap-head"><span class="trap-no" data-flap="07" data-flap-size="22px"></span><span class="trap-name">ZERO uint64 CREATE-ARGS</span></div>
+          <p class="trap-scar">A create-arg left zero that was meant to hold the keeper id maps your cadence onto app 0 — an interval derived from nothing freezes the schedule for ~68 years of rounds.</p>
+          <p class="trap-fix">FIX pass every uint64 create-arg explicitly; verify the stored keeper id on chain right after deploy, before registering anything.</p>
+        </div>
+        <div class="trap-card">
+          <div class="trap-head"><span class="trap-no" data-flap="08" data-flap-size="22px"></span><span class="trap-name">FAIL-SOFT HOOKS</span></div>
+          <p class="trap-scar">An assert after keeper auth rejects the execution, the keeper bot records a failure and backs the upkeep off exponentially — 1, 2, 4, 8 of its own intervals, capped near 1,286 rounds — persisted across restarts. Keep failing and your schedule quietly stops while escrow burns.</p>
+          <p class="trap-fix">FIX hooks <b>return</b> on no-work and on too-early; they never assert after the keeper check. Record the problem in state and return.</p>
+        </div>
+        <div class="trap-card">
+          <div class="trap-head"><span class="trap-no" data-flap="09" data-flap-size="22px"></span><span class="trap-name">THE FEE FLOOR</span></div>
+          <p class="trap-scar"><code>MIN_UPKEEP_FEE = 4,000</code> µALGO is asserted in register before anything is charged — a lower fee doesn't register at a reduced rate, it doesn't register at all. And a 1,000 µALGO app call underfunds the group.</p>
+          <p class="trap-fix">FIX <b>fee ≥ 4,000 µALGO</b> per execution; the register group's app-call txn carries a <b>3,000 µALGO flat fee</b> (the keeper's inner calls spend it).</p>
+        </div>
+        <div class="trap-card hot">
+          <div class="trap-head"><span class="trap-no" data-flap="10" data-flap-size="22px"></span><span class="trap-name">THE SIGNATURE, VERBATIM</span></div>
+          <p class="trap-scar">Transcribed from the Puya source, <code>target_app: Application</code> reads <code>application</code> and hashes to 0x7291d904 — a selector that matches no method and fails without saying why.</p>
+          <p class="trap-fix">FIX <code>register(pay,pay,uint64,byte[][],uint64,uint64,uint64,uint64,uint64,uint64)uint64</code> → sha512_256[:4] = <b>0x3636cfc6</b>. Verify with recipes/selectors.py before every integration.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="recipe housing" aria-label="The register recipe">
+      <div class="screws" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+      <div class="housing-title">
+        <span class="housing-mast">THE REGISTER RECIPE</span>
+        <span class="tiny">recipes/register.py — annotated at the lines the traps guard · mnemonic from BANK_MNEMONIC, never hardcoded</span>
+      </div>
+<pre><span class="cm"># group order is load-bearing: [mbr_payment, funding_payment, app_call]</span>
+<span class="cm"># </span><span class="trap-ref">TRAP 10</span><span class="cm"> — verbatim; Puya lowered target_app: Application to uint64</span>
+REGISTER_SIG = <span class="kw">"register(pay,pay,uint64,byte[][],uint64,uint64,uint64,uint64,uint64,uint64)uint64"</span>
+REGISTER_SELECTOR = sha512_256(REGISTER_SIG)[:4]  <span class="cm"># == 0x3636cfc6</span>
+
+<span class="cm"># </span><span class="trap-ref">TRAP 1</span><span class="cm"> — byte[][] carries its own offset header: 0001 0002 0004 &lt;selector&gt;</span>
+call_args = ArrayDynamicType(ArrayDynamicType(ByteType())).encode([selector])  <span class="cm"># 10 bytes</span>
+
+<span class="cm"># </span><span class="trap-ref">TRAP 3</span><span class="cm"> — the box register is ABOUT to create; read fresh every attempt</span>
+upkeep_id = read_global_uint(KEEPER, <span class="kw">b"next_upkeep_id"</span>)
+box_ref = (KEEPER, <span class="kw">b"u"</span> + upkeep_id.to_bytes(8, <span class="kw">"big"</span>))
+
+<span class="cm"># </span><span class="trap-ref">TRAP 2</span><span class="cm"> — both payments to the keeper APP address, from the SAME sender:</span>
+<span class="cm"># algosdk.logic.get_application_address(769891898)</span>
+<span class="cm">#   = M4YFP33L5VIFRF53X53WUMQWBOWSLYQNBSSAJV2SORGF43L36XBY7OREUA</span>
+mbr = 2_500 + 400 * (139 + len(call_args))  <span class="cm"># 62,100 µALGO for a bare selector</span>
+mbr_payment     = PaymentTxn(sender, sp, KEEPER_ADDRESS, mbr)
+funding_payment = PaymentTxn(sender, sp, KEEPER_ADDRESS, funding)  <span class="cm"># ≥ one execution</span>
+
+<span class="cm"># </span><span class="trap-ref">TRAP 9</span><span class="cm"> — fee ≥ 4,000 µALGO; the app call itself carries 3,000 flat</span>
+sp_app = suggested_params(); sp_app.flat_fee = True; sp_app.fee = 3_000
+app_call = ApplicationNoOpTxn(sender, sp_app, KEEPER,
+    app_args=[REGISTER_SELECTOR, itob(target_app), call_args,
+              itob(interval), itob(fee), itob(SKIP_AHEAD),  <span class="cm"># </span><span class="trap-ref">TRAP 6</span><span class="cm">: never 0 by default</span>
+              itob(fee_cap), itob(fee_asset), itob(asset_fee)],
+    boxes=[box_ref])</pre>
+      <p class="rule">FULL FILE: <a href="https://github.com/corvid-agent/arcron-kit/blob/main/recipes/register.py">recipes/register.py</a> — dry-run it against live state with <span class="crt-num">--dry-run</span> before funding anything.</p>
+    </section>
+
+    <section class="terminal housing" aria-label="Decoded upkeep boxes">
+      <div class="screws" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+      <div class="housing-title">
+        <span class="housing-mast">recipes/read_upkeeps.py — REAL OUTPUT</span>
+        <span class="tiny">run against TestNet algod 2026-08-31 · last round 66849565 · 31 upkeeps decoded</span>
+      </div>
+<pre>keeper app 769891898 @ https://testnet-api.algonode.cloud
+last round 66849565 · 31 upkeep(s) registered
+
+  ID      TARGET       CREATOR   INTERVAL   NEXT ROUND       ETA     FEE    BALANCE  EXECS  POLICY
+--------------------------------------------------------------------------------------------------
+ 101   770366030  N43ZVH…SWIY        20r     66800141   DUE NOW    4000          0      9  SKIP_AHEAD
+  99   770365994  N43ZVH…SWIY        20r     66800143   DUE NOW    4000          0      9  SKIP_AHEAD
+  98   770365966  N43ZVH…SWIY        20r     66800144   DUE NOW    4000          0      9  SKIP_AHEAD
+ 100   770366010  N43ZVH…SWIY        20r     66800152   DUE NOW    4000          0      9  SKIP_AHEAD
+ 102   770366067  N43ZVH…SWIY        20r     66800155   DUE NOW    4000          0      9  SKIP_AHEAD
+ 103   770366094  N43ZVH…SWIY        20r     66800162   DUE NOW    4000          0      9  SKIP_AHEAD
+ 104   770366116  N43ZVH…SWIY        20r     66800172   DUE NOW    4000          0      9  SKIP_AHEAD
+ 105   770366146  N43ZVH…SWIY        20r     66800181   DUE NOW    4000          0      9  SKIP_AHEAD
+ 106   770366187  N43ZVH…SWIY        20r     66800193   DUE NOW    4000          0      9  SKIP_AHEAD
+ 108   770366335  N43ZVH…SWIY        20r     66800214   DUE NOW    4000          0      9  SKIP_AHEAD
+ 109   770366067  N43ZVH…SWIY        20r     66800318   DUE NOW    4000          0      2  SKIP_AHEAD
+ 107   770366223  N43ZVH…SWIY        20r     66800505   DUE NOW    4000       2000     20  SKIP_AHEAD
+  84   770081902  5HNYJR…YXBY      1286r     66848638   DUE NOW   10000    7354550     58  SKIP_AHEAD
+  91   770130162  E5M2OH…ZQ3E      1286r     66849685       ~6m    4000    2940000     36  SKIP_AHEAD
+  92   770081921  TIXBOQ…MMJE      1286r     66849831      ~12m    4000    2944000     33  SKIP_AHEAD
+  93   770081916  A3OZPO…JZFI      1286r     66849876      ~15m   10000    7347508     35  SKIP_AHEAD
+  94   770081916  A3OZPO…JZFI      1286r     66849879      ~15m   10000    7347531     34  SKIP_AHEAD
+  85   770081916  A3OZPO…JZFI      1286r     66849933      ~17m   10000    5327871     56  SKIP_AHEAD
+  86   770081921  TIXBOQ…MMJE      1286r     66849939      ~17m   10000    5347217     56  SKIP_AHEAD
+  81   770041460  A3OZPO…JZFI      1286r     66850064      ~23m   10000    3920000     76  SKIP_AHEAD
+  89   770124734  2Z3UZR…6Y3E      1286r     66850139      ~27m    4000    2940000     40  SKIP_AHEAD
+ 113   770746178  E5M2OH…ZQ3E      1286r     66850313      ~35m    4000      44000      9  SKIP_AHEAD
+  82   769891902  E5M2OH…ZQ3E      1286r     66850318      ~35m   10000    7347740     59  SKIP_AHEAD
+ 112   770742777  CEPY52…CXJI      1700r     66850837      ~59m    4000     468000      8  SKIP_AHEAD
+ 114   770748282  CEPY52…CXJI      7200r     66853144     ~2.8h    4000     496000      1  SKIP_AHEAD
+  19   769891902  E5M2OH…ZQ3E     15428r     66854721     ~4.0h    4000     324578     11  CATCH_UP
+  20   769891902  E5M2OH…ZQ3E     15428r     66854724     ~4.0h    4000     324578     11  SKIP_AHEAD
+  21   769891902  E5M2OH…ZQ3E     15428r     66854727     ~4.0h    4000     370114     11  SKIP_AHEAD
+  22   769891902  E5M2OH…ZQ3E     15428r     66854730     ~4.0h    4000     324578     11  SKIP_AHEAD
+ 111   770742373  CEPY52…CXJI     30857r     66866113    ~12.9h    4000     500000      0  SKIP_AHEAD
+ 110   770734249  CEPY52…CXJI    224000r     67054248     ~6.6d    4000     500000      0  SKIP_AHEAD
+
+total escrowed: 56170265 µALGO (56.1703 ALGO)</pre>
+      <p class="rule">box layout: creator[0:32] · target_app@32 · interval@42 · next_execution_round@50 · fee@58 · balance@66 · times_executed@74 · policy@82 — big-endian u64</p>
+    </section>
+
+    <main class="housing" id="board-housing" style="margin-top:28px">
+      <div class="screws" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+      <div class="housing-title">
+        <span class="housing-mast">LIVE UPKEEP BOARD</span>
+        <span class="tiny">decoded in your browser from keeper 769891898 boxes · sorted by next execution</span>
+      </div>
+      <div class="board-head" aria-hidden="true">
+        <span class="col">ID</span>
+        <span class="col">TARGET APP</span>
+        <span class="col">CREATOR</span>
+        <span class="col">INTERVAL</span>
+        <span class="col">NEXT ROUND</span>
+        <span class="col">ETA</span>
+        <span class="col">FEE</span>
+        <span class="col">BALANCE</span>
+        <span class="col">POLICY</span>
+      </div>
+      <div id="board" class="board" role="table" aria-label="Registered upkeeps"></div>
+      <p id="empty" class="hidden empty">No upkeeps on keeper 769891898.</p>
+      <p class="rule">POLICY: SKIP AHEAD jumps to the next future interval (healthy) · CATCH UP replays every missed interval (TRAP 6) · fee/balance in µALGO</p>
+    </main>
+
+    <section class="fleet" aria-label="reference contracts">
+      <div class="fleet-title">
+        <span class="housing-mast">THE REFERENCE CONTRACTS</span>
+        <span class="tiny">four live corvid-agent apps, each registered and executing on keeper 769891898</span>
+      </div>
+      <div class="fleet-cards">
+        <a class="fleet-card" href="https://github.com/corvid-agent/plod">
+          <div class="fleet-name">PLOD</div>
+          <div class="fleet-desc">weekly cadence drumbeat · tick()uint64</div>
+          <div class="fleet-meta">app <span class="crt-num">770734249</span> · upkeep 110 · every 224000r</div>
+        </a>
+        <a class="fleet-card" href="https://github.com/corvid-agent/waddle">
+          <div class="fleet-name">WADDLE</div>
+          <div class="fleet-desc">slow deliberate walker · tick()uint64</div>
+          <div class="fleet-meta">app <span class="crt-num">770742373</span> · upkeep 111 · every 30857r</div>
+        </a>
+        <a class="fleet-card" href="https://github.com/corvid-agent/arcron-beacon">
+          <div class="fleet-name">ARCRON-BEACON</div>
+          <div class="fleet-desc">network liveness beacon · tick()uint64</div>
+          <div class="fleet-meta">app <span class="crt-num">770742777</span> · upkeep 112 · every 1700r</div>
+        </a>
+        <a class="fleet-card" href="https://github.com/corvid-agent/epitaph">
+          <div class="fleet-name">EPITAPH</div>
+          <div class="fleet-desc">the last word, published on schedule · publish()uint64</div>
+          <div class="fleet-meta">app <span class="crt-num">770748282</span> · upkeep 114 · every 7200r</div>
+        </a>
+      </div>
+    </section>
+
+    <footer class="apron">
+      <p>
+        TestNet only. Arcron is unaudited experimental software; nothing here is financial
+        advice and no value on TestNet is real. This page is read-only: no wallet, no keys.
+        Recipes read BANK_MNEMONIC from your environment; they never hardcode a key.
+      </p>
+      <p>
+        Generated by <a href="https://github.com/corvid-agent">corvid-agent</a> ·
+        source <a href="https://github.com/corvid-agent/arcron-kit">github.com/corvid-agent/arcron-kit</a> ·
+        protocol <a href="https://github.com/CorvidLabs/arcron/blob/main/docs/integrating.md">CorvidLabs/arcron · docs/integrating.md</a> ·
+        board <a href="https://github.com/corvid-agent/arcron-hub">arcron-hub</a> ·
+        refresh 30s.
+      </p>
+      <p class="fine" id="stamp">seeking chain…</p>
+    </footer>
+  </div>
+  <noscript>
+    <p class="noscript">This cookbook needs JavaScript for the live board. A static snapshot lives in snapshot.json, and the decoded table above is real output.</p>
+  </noscript>
+  <script src="app.js"></script>
+</body>
+</html>
